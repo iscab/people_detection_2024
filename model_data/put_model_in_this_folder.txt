@@ -1,0 +1,10 @@
+
+Example of models:  
+yolov3.h5  
+yolov3.weights  
+
+https://github.com/patrick013/Object-Detection---Yolov3/tree/master/model  
+
+
+Example of labels:
+coco.names  
