@@ -15,15 +15,15 @@ import numpy as np
 import cv2
 
 
-def load_image_pixels(image, shape):
+def load_image_pixels(image, new_shape):
     """
     load image pixels
 
     :param image: image from Open CV
-    :param shape: contains width and height
+    :param new_shape: contains width and height
     :return:
     """
-    width, height = shape
+    width, height = new_shape
     image = cv2.resize(image, (width, height))
     image = image.astype("float32")
     image /= 255.0
@@ -174,9 +174,45 @@ def bbox_iou(box1, box2):
     return float(intersect) / union
 
 
+def do_nms(boxes, nms_thresh):
+    """"""
+    if len(boxes) > 0:
+        nb_class = len(boxes[0].classes)
+    else:
+        return
+
+    for c in range(nb_class):
+        sorted_indices = np.argsort([-box.classes[c] for box in boxes])
+        for i in range(len(sorted_indices)):
+            index_i = sorted_indices[i]
+            if boxes[index_i].classes[c] == 0: continue
+            for j in range(i+1, len(sorted_indices)):
+                index_j = sorted_indices[j]
+                if bbox_iou(boxes[index_i], boxes[index_j]) >= nms_thresh:
+                    boxes[index_j].classes[c] = 0
 
 
+def get_boxes(boxes, labels, thresh):
+    """
+    get all the results above a threshold
 
+    :param boxes:
+    :param labels:
+    :param thresh:
+    :return:
+    """
+    v_boxes, v_labels, v_scores = list(), list(), list()
+    # enumerate all boxes
+    for box in boxes:
+        # enumerate all possible labels
+        for i in range(len(labels)):
+            # check if the threshold for this label is high enough
+            if box.classes[i] > thresh:
+                v_boxes.append(box)
+                v_labels.append(labels[i])
+                v_scores.append(box.classes[i] * 100)
+    # don't break, many labels may trigger for one box
+    return v_boxes, v_labels, v_scores
 
 
 
