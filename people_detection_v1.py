@@ -62,6 +62,12 @@ class_threshold = 0.6
 # video_path = r"sample_video\3699517-hd_1920_1080_30fps.mp4"
 video_path = r"sample_video\3747854-uhd_3840_2160_24fps.mp4"
 cap = cv2.VideoCapture(video_path)
+fps = cap.get(cv2.CAP_PROP_FPS)
+print(f"frame rate = {fps} fps")
+num_of_frame_threshold = time_range_in_minutes * 60 * fps
+num_of_frame_threshold = int(num_of_frame_threshold)
+# print(num_of_frame_threshold)
+# exit()
 
 # output file
 output_file = r"output"
@@ -76,6 +82,7 @@ fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 out = cv2.VideoWriter(output_file, fourcc, 30.0, (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))))
 
 # Video processing
+frame_id = 0
 while cap.isOpened():
     ret, frame = cap.read()
     if not ret:
@@ -98,30 +105,39 @@ while cap.isOpened():
     # break
 
     # suppress non-maximal boxes
-    hfun_img.do_nms(boxes, 0.6)
+    hfun_img.do_nms(boxes, class_threshold)
     # print(len(boxes))
     # break
 
     # get the details of the detected objects
-    v_boxes, v_labels, v_scores = hfun_img.get_boxes(boxes, class_names, 0.5)
+    v_boxes, v_labels, v_scores = hfun_img.get_boxes(boxes, class_names, class_threshold)
     # print(len(v_boxes))
     # break
 
     # summarize what we found and count the number of people
     num_of_people = 0
     for i in range(len(v_boxes)):
-        print(v_labels[i], v_scores[i])
+        # print(v_labels[i], v_scores[i])
         # calculate number of people
         if v_labels[i] == "person":
             num_of_people += 1
-    print(f"number of people = {num_of_people}")
+    # print(f"number of people = {num_of_people}")
 
     # prepare alert if the number of people achieve threshold
     if num_of_people >= num_of_people_threshold:
-        print(f"number of people >= {num_of_people_threshold}")
+        print(f"number of people = {num_of_people} >= {num_of_people_threshold}")
+        frame_id += 1
+    else:
+        frame_id = 0  # reset to zero
+
+    # alert if the number people visible continuously for more than time threshold
+    if frame_id >= num_of_frame_threshold:
+        print(f"At least {num_of_people_threshold} people are visible continuosly for {time_range_in_minutes} minutes")
     # break
 
-
+    # Exit on 'q' key
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        break
 
 
 # clear
